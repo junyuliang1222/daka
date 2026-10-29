@@ -24,12 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # enablement: true 会在 Pages 尚未开启时自动开启，无需手动去设置页点
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
+      # 纯静态站点，直接打包仓库根目录
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
