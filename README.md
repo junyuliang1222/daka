@@ -75,23 +75,37 @@ ipconfig getifaddr en0
 
 > 注意：局域网是 http，不是 https。页面和打卡都能正常用，但「添加到主屏幕」和离线缓存的完整体验需要 https，所以正式使用要按下面的方式部署。
 
-## 部署到 GitHub Pages（拿到永久 https 地址）
+## 部署（已完成）
+
+线上地址：**https://junyuliang1222.github.io/daka/**
+
+仓库：https://github.com/junyuliang1222/daka （公开仓库，只放代码，不含任何打卡数据）
+
+部署方式：GitHub Actions 自动部署
+
+- 工作流文件：`.github/workflows/pages.yml`
+- Pages 的 Source 设置为 `GitHub Actions`
+- **以后只要 `git push` 到 main，大约 1 分钟后线上自动更新**，不用再做任何配置
 
 ```bash
-cd /Users/junyuliang/Desktop/2
-git init
 git add .
-git commit -m "打卡应用第一版"
-git branch -M main
-git remote add origin https://github.com/<你的用户名>/<仓库名>.git
-git push -u origin main
+git commit -m "改了什么"
+git push
 ```
 
-然后到仓库 `Settings → Pages`，`Source` 选 `Deploy from a branch`，分支选 `main`、目录选 `/ (root)`，保存。
+### iPhone 安装成 App
 
-几十秒后访问 `https://<用户名>.github.io/<仓库名>/`
+1. Safari 打开 https://junyuliang1222.github.io/daka/
+2. 点底部分享按钮（方框加向上箭头）
+3. 选「添加到主屏幕」
+4. 命名为「打卡」→ 添加
 
-在 iPhone 上打开这个网址 → 点 Safari 底部分享按钮 → **添加到主屏幕** → 从此是一个独立 App。
+装好之后：桌面有独立图标、全屏无地址栏、断网也能打开、数据存在手机本地。
+
+### 如果以后要换托管
+
+代码是纯静态的，整个目录可以原样丢到任何静态托管（Cloudflare Pages、Netlify、Vercel）。
+所有资源都用相对路径（`./src/...`），所以放在仓库子路径下（`/daka/`）也能正常工作，不需要改任何代码。
 
 ## 数据说明
 
