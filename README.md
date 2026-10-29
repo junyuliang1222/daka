@@ -110,7 +110,7 @@ git push
 ## 数据说明
 
 - 打卡数据只存在本机的 localStorage，键名 `habit-checkin:v1`，不会上传到任何服务器
-- 设置页可以导出 JSON 备份、从备份恢复
+- 设置页可以导出 JSON 备份、从备份恢复、清空所有数据
 - 建议定期导出备份（存到「文件」App 或发给自己），防止 iOS 清理网页数据
 
 ## 想改点什么
@@ -119,7 +119,7 @@ git push
 | --- | --- |
 | 配色、圆角、字号 | `src/styles.css` 顶部的 CSS 变量 |
 | 全局兜底鼓励语 | `src/lib/encourage.js` 的 `GLOBAL_LINES` |
-| 首次打开的示例数据 | `src/lib/store.js` 的 `createSeedData()` |
+| 初始数据（默认空） | `src/lib/store.js` 的 `createEmptyData()` |
 | 打卡逻辑 / 连续天数算法 | `src/lib/stats.js` |
 | 月历格子样式 | `src/styles.css` 的 `.cal-cell` / `.oc-sq` 系列 |
 | 九宫格行列数 | `src/views/stats.js` 的 `SLOTS` 常量 |

@@ -1,6 +1,6 @@
 import { el, icon } from '../dom.js'
 
-export function settingsSheet({ data, onExport, onImportText, onClose }) {
+export function settingsSheet({ data, onExport, onImportText, onClearAll, onClose }) {
   const backdrop = el('div', { class: 'sheet-backdrop' })
   const sheet = el('div', { class: 'sheet' })
   backdrop.appendChild(sheet)
@@ -60,6 +60,33 @@ export function settingsSheet({ data, onExport, onImportText, onClose }) {
   )
   list.appendChild(rowBtn('⬆️', '从备份恢复', '会覆盖当前所有数据，请先导出', () => fileInput.click()))
   sheet.appendChild(list)
+
+  sheet.appendChild(el('div', { class: 'section-title' }, '危险操作'))
+  sheet.appendChild(
+    el(
+      'div',
+      { class: 'list' },
+      el(
+        'button',
+        {
+          class: 'row tappable',
+          onclick: () => {
+            const ok = confirm(
+              `确定要清空所有数据吗？\n\n将删除 ${data.habits.length} 个事项和 ${data.checkins.length} 条打卡记录，且无法恢复。`,
+            )
+            if (ok) onClearAll()
+          },
+        },
+        el('div', { class: 'tile', style: { background: 'var(--fill-4)' } }, '🗑️'),
+        el(
+          'div',
+          { class: 'row-main' },
+          el('div', { class: 'row-title', style: { color: 'var(--red)' } }, '清空所有数据'),
+          el('div', { class: 'row-sub' }, '删除全部事项与打卡记录，不可恢复'),
+        ),
+      ),
+    ),
+  )
 
   sheet.appendChild(el('div', { class: 'section-title' }, '关于数据'))
   sheet.appendChild(

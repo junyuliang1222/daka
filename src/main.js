@@ -7,7 +7,7 @@ import {
   isDoneOn,
 } from './lib/stats.js'
 import {
-  createSeedData,
+  createEmptyData,
   exportBackup,
   load,
   parseBackup,
@@ -26,7 +26,7 @@ import { settingsSheet } from './views/settings.js'
 const NOW = new Date()
 
 const state = {
-  data: load() || createSeedData(),
+  data: load() || createEmptyData(),
   tab: 'today',
   lastTab: null,
   flash: null,
@@ -217,6 +217,7 @@ if ('serviceWorker' in navigator) {
         data: state.data,
         onExport: () => exportBackup(state.data),
         onImportText: handleImportText,
+        onClearAll: clearAll,
         onClose: closeSheet,
       }),
     )
@@ -261,6 +262,14 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {})
   })
 }
+}
+
+function clearAll() {
+  state.data = createEmptyData()
+  persist()
+  closeSheet()
+  render()
+  showToast({ emoji: '🧹', text: '所有事项和记录已清空。', title: '已清空', color: '#8E8E93' })
 }
 
 function handleImportText(text) {
