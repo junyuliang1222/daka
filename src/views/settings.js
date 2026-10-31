@@ -1,6 +1,6 @@
 import { el, icon } from '../dom.js'
 
-export function settingsSheet({ data, onExport, onImportText, onClearAll, onClose }) {
+export function settingsSheet({ data, onExport, onImportText, onClearAll, onRestorePrev, hasPrev, onClose }) {
   const backdrop = el('div', { class: 'sheet-backdrop' })
   const sheet = el('div', { class: 'sheet' })
   backdrop.appendChild(sheet)
@@ -88,6 +88,32 @@ export function settingsSheet({ data, onExport, onImportText, onClearAll, onClos
     ),
   )
 
+  if (hasPrev) {
+    sheet.appendChild(el('div', { class: 'section-title' }, '恢复'))
+    sheet.appendChild(
+      el(
+        'div',
+        { class: 'list' },
+        el(
+          'button',
+          {
+            class: 'row tappable',
+            onclick: () => {
+              if (confirm('恢复上一次删除前的数据？当前的记录会被覆盖。')) onRestorePrev()
+            },
+          },
+          el('div', { class: 'tile', style: { background: 'var(--fill-4)' } }, '⏪'),
+          el(
+            'div',
+            { class: 'row-main' },
+            el('div', { class: 'row-title' }, '恢复上一次删除前的数据'),
+            el('div', { class: 'row-sub' }, '事项被删光或误清空时用这个找回'),
+          ),
+        ),
+      ),
+    )
+  }
+
   sheet.appendChild(el('div', { class: 'section-title' }, '关于数据'))
   sheet.appendChild(
     el(
@@ -99,6 +125,10 @@ export function settingsSheet({ data, onExport, onImportText, onClearAll, onClos
         '所有打卡记录只存在这台手机里，不会上传到任何服务器。',
         el('br', {}),
         '建议每隔一段时间导出一份备份，存到「文件」App 或发给自己，防止系统清理网页数据。',
+        el('br', {}),
+        el('br', {}),
+        el('span', { style: { color: 'var(--label-3)' } }, '当前地址：'),
+        el('span', { class: 'mono' }, location.host + location.pathname),
       ),
     ),
   )

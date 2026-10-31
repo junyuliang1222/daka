@@ -9,7 +9,9 @@ import {
 import {
   createEmptyData,
   exportBackup,
+  hasPreviousBackup,
   load,
+  loadPreviousBackup,
   parseBackup,
   save,
 } from './lib/store.js'
@@ -235,6 +237,8 @@ const actions = {
         onExport: () => exportBackup(state.data),
         onImportText: handleImportText,
         onClearAll: clearAll,
+        onRestorePrev: restorePrevious,
+        hasPrev: hasPreviousBackup(),
         onClose: closeSheet,
       }),
     )
@@ -267,6 +271,24 @@ function deleteHabit(id) {
   closeSheet()
   render()
 
+}
+
+function restorePrevious() {
+  const prev = loadPreviousBackup()
+  if (!prev) {
+    showToast({ emoji: '⚠️', text: '没有可恢复的备份。', title: '恢复失败', color: '#FF3B30' })
+    return
+  }
+  state.data = prev
+  persist()
+  closeSheet()
+  render()
+  showToast({
+    emoji: '⏪',
+    text: `已恢复 ${prev.habits.length} 个事项、${prev.checkins.length} 条记录。`,
+    title: '恢复成功',
+    color: '#34C759',
+  })
 }
 
 function clearAll() {

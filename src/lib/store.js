@@ -1,6 +1,6 @@
-import { addDays, toKey } from './date.js'
-
 const KEY = 'habit-checkin:v1'
+const PREV_KEY = 'habit-checkin:prev' // 删除类操作前的快照，用于误删恢复
+const CORRUPT_KEY = 'habit-checkin:corrupt' // 解析失败时的原始内容留档
 
 export function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
@@ -51,7 +51,15 @@ export function load() {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return null
-    return normalize(JSON.parse(raw))
+    try {
+      return normalize(JSON.parse(raw))
+    } catch {
+      // 内容坏了：原样留档，绝不用空数据把它覆盖掉
+      try {
+        localStorage.setItem(CORRUPT_KEY, raw)
+      } catch {}
+      return null
+    }
   } catch {
     return null
   }
@@ -59,11 +67,64 @@ export function load() {
 
 export function save(data) {
   try {
+    const prevRaw = localStorage.getItem(KEY)
+    if (prevRaw) {
+      // 只有「事项变少」这种破坏性变更才留快照，避免被日常打卡冲掉
+      try {
+        const prev = JSON.parse(prevRaw)
+        const prevCount = Array.isArray(prev?.habits) ? prev.habits.length : 0
+        if (prevCount > data.habits.length) {
+          localStorage.setItem(PREV_KEY, prevRaw)
+        }
+      } catch {}
+    }
     localStorage.setItem(KEY, JSON.stringify(data))
     return true
   } catch {
     return false
   }
+}
+
+function readKey(key) {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    return normalize(JSON.parse(raw))
+  } catch {
+    return null
+  }
+}
+
+/** 是否存在「删除前」的快照 */
+export function hasPreviousBackup() {
+  try {
+    return !!localStorage.getItem(PREV_KEY)
+  } catch {
+    return false
+  }
+}
+
+export function loadPreviousBackup() {
+  return readKey(PREV_KEY)
+}
+
+export function clearPreviousBackup() {
+  try {
+    localStorage.removeItem(PREV_KEY)
+  } catch {}
+}
+
+/** 是否有解析失败被留档的数据 */
+export function hasCorruptBackup() {
+  try {
+    return !!localStorage.getItem(CORRUPT_KEY)
+  } catch {
+    return false
+  }
+}
+
+export function loadCorruptBackup() {
+  return readKey(CORRUPT_KEY)
 }
 
 /* ---------------- 导入导出 ---------------- */

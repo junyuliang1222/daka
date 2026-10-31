@@ -271,8 +271,8 @@ export function editorSheet({ initial, onSave, onDelete, onClose }) {
 
   // 连续型看天数，累计型看次数/天数
   const unitFor = (kind) => (kind === 'streak' ? '天' : form.type === 'count' ? '次' : '天')
-  // 滑块的量程：连续 1-30 天，累计 1-100；已有值超出量程时自动放宽
-  const maxFor = (kind, value) => Math.max(kind === 'streak' ? 30 : 100, value)
+  // 滑块的量程固定 1-30；已有值超出 30 时自动放宽，避免把老数据卡掉
+  const maxFor = (kind, value) => Math.max(30, value)
 
   const buildRewardBlock = (r, i) => {
     const unit = unitFor(r.kind)
