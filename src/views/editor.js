@@ -22,7 +22,10 @@ export function editorSheet({ initial, onSave, onDelete, onClose }) {
     unit: initial?.unit ?? '次',
     totalTarget: initial?.totalTarget ? String(initial.totalTarget) : '',
     encText: (initial?.encouragements ?? []).join('\n'),
-    rewards: (initial?.rewards ?? []).map((r) => ({ ...r })),
+    // 新建时给一条空奖励，直接就能看到并拖动滑块
+    rewards: initial?.rewards
+      ? initial.rewards.map((r) => ({ ...r }))
+      : [{ id: uid(), title: '', kind: 'total', threshold: 30 }],
     milestones: (initial?.milestones ?? []).map((m) => ({ ...m })),
   }
   if (form.type === 'daily') form.dailyTarget = '1'
@@ -116,6 +119,8 @@ export function editorSheet({ initial, onSave, onDelete, onClose }) {
     dailyBtn.classList.toggle('on', t === 'daily')
     countBtn.classList.toggle('on', t === 'count')
     targetRow.style.display = t === 'count' ? '' : 'none'
+    // 累计型奖励的单位文案依赖打卡方式，重建一次
+    if (typeof rebuildRewards === 'function') rebuildRewards()
   }
   dailyBtn.addEventListener('click', () => setType('daily'))
   countBtn.addEventListener('click', () => setType('count'))
@@ -206,11 +211,13 @@ export function editorSheet({ initial, onSave, onDelete, onClose }) {
           el('input', {
             class: 'field tiny',
             inputmode: 'numeric',
-            value: String(m.day),
+            value: m.day ? String(m.day) : '',
             placeholder: '7',
             oninput: (e) => {
-              form.milestones[i].day = Number(e.target.value.replace(/[^\d]/g, '')) || 1
-              e.target.value = String(form.milestones[i].day)
+              // 允许临时清空，保存时才兜底成 1
+              const raw = e.target.value.replace(/[^\d]/g, '')
+              form.milestones[i].day = raw === '' ? 0 : Number(raw)
+              if (e.target.value !== raw) e.target.value = raw
             },
           }),
           el('input', {
@@ -261,59 +268,105 @@ export function editorSheet({ initial, onSave, onDelete, onClose }) {
 
   /* ---- 奖励 ---- */
   const rewardList = el('div', {})
+
+  // 连续型看天数，累计型看次数/天数
+  const unitFor = (kind) => (kind === 'streak' ? '天' : form.type === 'count' ? '次' : '天')
+  // 滑块的量程：连续 1-30 天，累计 1-100；已有值超出量程时自动放宽
+  const maxFor = (kind, value) => Math.max(kind === 'streak' ? 30 : 100, value)
+
+  const buildRewardBlock = (r, i) => {
+    const unit = unitFor(r.kind)
+    const max = maxFor(r.kind, r.threshold)
+
+    const valueLabel = el('span', { class: 're-val' }, `${r.threshold} ${unit}`)
+
+    const slider = el('input', {
+      type: 'range',
+      class: 'slider',
+      min: '1',
+      max: String(max),
+      step: '1',
+      value: String(Math.min(r.threshold, max)),
+      'aria-label': '达成次数',
+    })
+
+    const paint = () => {
+      const pct = ((Number(slider.value) - 1) / (max - 1)) * 100
+      slider.style.background = `linear-gradient(to right, var(--accent) ${pct}%, var(--fill-3) ${pct}%)`
+    }
+    slider.addEventListener('input', () => {
+      form.rewards[i].threshold = Number(slider.value)
+      valueLabel.textContent = `${form.rewards[i].threshold} ${unitFor(form.rewards[i].kind)}`
+      paint()
+    })
+    paint()
+
+    const kindSelect = el(
+      'select',
+      {
+        class: 'field re-kind',
+        onchange: (e) => {
+          const nextKind = e.target.value
+          form.rewards[i].kind = nextKind
+          const nextMax = maxFor(nextKind, form.rewards[i].threshold)
+          if (form.rewards[i].threshold > nextMax) form.rewards[i].threshold = nextMax
+          rebuildRewards()
+        },
+      },
+      el('option', { value: 'total' }, '累计'),
+      el('option', { value: 'streak' }, '连续'),
+    )
+    kindSelect.value = r.kind
+
+    const block = el(
+      'div',
+      { class: 'reward-block' },
+      el(
+        'div',
+        { class: 're-top' },
+        el('input', {
+          class: 'field',
+          value: r.title,
+          placeholder: '比如：奖励自己一杯咖啡',
+          oninput: (e) => {
+            form.rewards[i].title = e.target.value
+          },
+        }),
+        el(
+          'button',
+          {
+            class: 'remove-btn',
+            'aria-label': '删除奖励',
+            onclick: () => {
+              form.rewards.splice(i, 1)
+              rebuildRewards()
+            },
+          },
+          '×',
+        ),
+      ),
+      el(
+        'div',
+        { class: 're-bottom' },
+        kindSelect,
+        el('span', { class: 're-mid' }, '满'),
+        valueLabel,
+      ),
+      slider,
+      el(
+        'div',
+        { class: 're-scale' },
+        el('span', {}, '1'),
+        el('span', {}, String(max)),
+      ),
+    )
+
+    return block
+  }
+
   const rebuildRewards = () => {
     rewardList.replaceChildren()
-    form.rewards.forEach((r, i) => {
-      const kindSelect = el(
-        'select',
-        {
-          class: 'field tiny',
-          style: { width: '78px' },
-          onchange: (e) => {
-            form.rewards[i].kind = e.target.value
-          },
-        },
-        el('option', { value: 'total' }, '累计'),
-        el('option', { value: 'streak' }, '连续'),
-      )
-      kindSelect.value = r.kind
-      rewardList.appendChild(
-        el(
-          'div',
-          { class: 'reward-edit' },
-          el('input', {
-            class: 'field',
-            value: r.title,
-            placeholder: '比如：奖励自己一杯咖啡',
-            oninput: (e) => {
-              form.rewards[i].title = e.target.value
-            },
-          }),
-          kindSelect,
-          el('input', {
-            class: 'field tiny',
-            inputmode: 'numeric',
-            value: String(r.threshold),
-            oninput: (e) => {
-              form.rewards[i].threshold = Number(e.target.value.replace(/[^\d]/g, '')) || 1
-              e.target.value = String(form.rewards[i].threshold)
-            },
-          }),
-          el(
-            'button',
-            {
-              class: 'remove-btn',
-              'aria-label': '删除奖励',
-              onclick: () => {
-                form.rewards.splice(i, 1)
-                rebuildRewards()
-              },
-            },
-            '×',
-          ),
-        ),
-      )
-    })
+    form.rewards.forEach((r, i) => rewardList.appendChild(buildRewardBlock(r, i)))
   }
   rebuildRewards()
 

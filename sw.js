@@ -1,5 +1,5 @@
 /* 离线缓存：让加到主屏幕后的 App 断网也能打开 */
-const CACHE = 'checkin-v5'
+const CACHE = 'checkin-v6'
 const ASSETS = [
   './',
   './index.html',
