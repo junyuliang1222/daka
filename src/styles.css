@@ -1172,3 +1172,128 @@ textarea.field {
   color: var(--label-3);
   text-align: center;
 }
+
+/* ---------- 日历补卡 ---------- */
+
+.cal-cell.editable {
+  cursor: pointer;
+  transition: transform 0.12s, background 0.2s;
+}
+
+.cal-cell.editable:active {
+  transform: scale(0.88);
+}
+
+.hint-right {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--label-3);
+  letter-spacing: 0;
+}
+
+/* ---------- 补卡弹层 ---------- */
+
+.day-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 2px 16px;
+}
+
+.day-head-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.day-name {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+
+.day-date {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--label-2);
+}
+
+.day-control {
+  padding: 6px 0 4px;
+}
+
+.day-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 0;
+  border-radius: var(--radius-sm);
+  background: var(--fill-4);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--label-2);
+}
+
+.day-state-ico {
+  display: inline-flex;
+}
+
+.big-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 6px 0;
+}
+
+.big-stepper button {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--fill-4);
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: transform 0.12s, background 0.15s;
+}
+
+.big-stepper button:active {
+  transform: scale(0.9);
+  background: var(--fill-3);
+}
+
+.big-stepper .val {
+  min-width: 118px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+.big-stepper .val small {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--label-3);
+  letter-spacing: 0;
+}
+
+.day-status {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--label-2);
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.sheet-actions > button {
+  flex: 1;
+}

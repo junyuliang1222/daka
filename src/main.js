@@ -20,6 +20,7 @@ import { todayView } from './views/today.js'
 import { statsView } from './views/stats.js'
 import { editorSheet } from './views/editor.js'
 import { settingsSheet } from './views/settings.js'
+import { dayEditorSheet } from './views/dayEditor.js'
 
 /* ---------------- 状态 ---------------- */
 
@@ -75,27 +76,34 @@ function closeSheet() {
 
 /* ---------------- 打卡动作 ---------------- */
 
-function changeAmount(habit, nextAmount) {
+/**
+ * 修改某个事项在某天的完成次数
+ * 只有「今天」达成时才会弹鼓励语，补卡不打扰
+ */
+function setAmountOn(habit, date, nextAmount) {
   const map = buildAmountMap(state.data.checkins)
-  const before = amountOf(map, habit.id, today)
+  const before = amountOf(map, habit.id, date)
+  if (before === nextAmount) return
+
   const wasDone = isDoneOn(habit, before)
   const nowDone = isDoneOn(habit, nextAmount)
 
   const rest = state.data.checkins.filter(
-    (c) => !(c.habitId === habit.id && c.date === today),
+    (c) => !(c.habitId === habit.id && c.date === date),
   )
   if (nextAmount > 0) {
     rest.push({
       habitId: habit.id,
-      date: today,
+      date,
       amount: nextAmount,
+      backfill: date !== today,
       updatedAt: new Date().toISOString(),
     })
   }
   state.data = { ...state.data, checkins: rest }
   persist()
 
-  if (!wasDone && nowDone) {
+  if (date === today && !wasDone && nowDone) {
     const nextMap = buildAmountMap(state.data.checkins)
     const streak = currentStreak(habit, nextMap, today)
     const doneCount = cumulativeOf(habit, nextMap)
@@ -107,13 +115,6 @@ function changeAmount(habit, nextAmount) {
     })
     state.flash = { habitId: habit.id }
     render()
-
-/* Service Worker：只在 https 或 localhost 下生效，局域网 http 会自动跳过 */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {})
-  })
-}
     setTimeout(() => {
       state.flash = null
     }, 520)
@@ -121,30 +122,27 @@ if ('serviceWorker' in navigator) {
   }
 
   render()
-
-/* Service Worker：只在 https 或 localhost 下生效，局域网 http 会自动跳过 */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {})
-  })
 }
+
+function changeToday(habit, nextAmount) {
+  setAmountOn(habit, today, nextAmount)
 }
 
 const actions = {
   inc(habit) {
     const map = buildAmountMap(state.data.checkins)
     const cur = amountOf(map, habit.id, today)
-    changeAmount(habit, cur + 1)
+    changeToday(habit, cur + 1)
   },
   dec(habit) {
     const map = buildAmountMap(state.data.checkins)
     const cur = amountOf(map, habit.id, today)
-    changeAmount(habit, Math.max(0, cur - 1))
+    changeToday(habit, Math.max(0, cur - 1))
   },
   toggle(habit) {
     const map = buildAmountMap(state.data.checkins)
     const cur = amountOf(map, habit.id, today)
-    changeAmount(habit, cur > 0 ? 0 : 1)
+    changeToday(habit, cur > 0 ? 0 : 1)
   },
   claim(habitId, rewardId) {
     const habit = state.data.habits.find((h) => h.id === habitId)
@@ -167,12 +165,6 @@ const actions = {
     }
     render()
 
-/* Service Worker：只在 https 或 localhost 下生效，局域网 http 会自动跳过 */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {})
-  })
-}
   },
   goStats() {
     state.tab = 'stats'
@@ -211,6 +203,31 @@ if ('serviceWorker' in navigator) {
       }),
     )
   },
+  /** 从日历点某一天，打开补卡弹层 */
+  openDay(habit, date) {
+    const map = buildAmountMap(state.data.checkins)
+    const current = amountOf(map, habit.id, date)
+    let sheet = null
+    const close = () => {
+      closeSheet()
+      sheet = null
+    }
+    const apply = (next) => {
+      // 弹层自己维护数字，这里同步写数据并刷新日历
+      setAmountOn(habit, date, next)
+      // render() 会重建页面，但弹层在 sheet-root 里不受影响
+      void sheet
+    }
+    sheet = dayEditorSheet({
+      habit,
+      date,
+      amount: current,
+      isToday: date === today,
+      onSet: apply,
+      onClose: close,
+    })
+    openSheet(sheet)
+  },
   openSettings() {
     openSheet(
       settingsSheet({
@@ -238,12 +255,6 @@ function saveHabit(habit) {
   closeSheet()
   render()
 
-/* Service Worker：只在 https 或 localhost 下生效，局域网 http 会自动跳过 */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {})
-  })
-}
 }
 
 function deleteHabit(id) {
@@ -256,12 +267,6 @@ function deleteHabit(id) {
   closeSheet()
   render()
 
-/* Service Worker：只在 https 或 localhost 下生效，局域网 http 会自动跳过 */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {})
-  })
-}
 }
 
 function clearAll() {
@@ -284,12 +289,6 @@ function handleImportText(text) {
     closeSheet()
     render()
 
-/* Service Worker：只在 https 或 localhost 下生效，局域网 http 会自动跳过 */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {})
-  })
-}
     showToast({
       emoji: '✅',
       text: `已恢复 ${parsed.habits.length} 个事项、${parsed.checkins.length} 条记录。`,
@@ -325,12 +324,6 @@ function renderTabbar() {
             state.tab = t.key
             render()
 
-/* Service Worker：只在 https 或 localhost 下生效，局域网 http 会自动跳过 */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {})
-  })
-}
             window.scrollTo({ top: 0 })
           },
         },

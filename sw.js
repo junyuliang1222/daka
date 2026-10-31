@@ -1,5 +1,5 @@
 /* 离线缓存：让加到主屏幕后的 App 断网也能打开 */
-const CACHE = 'checkin-v4'
+const CACHE = 'checkin-v5'
 const ASSETS = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const ASSETS = [
   './src/views/stats.js',
   './src/views/editor.js',
   './src/views/settings.js',
+  './src/views/dayEditor.js',
   './icon.svg',
   './apple-touch-icon.png',
   './manifest.webmanifest',

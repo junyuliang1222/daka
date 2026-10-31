@@ -30,3 +30,8 @@ export function dayOfYear(d) {
   const start = new Date(d.getFullYear(), 0, 0)
   return Math.floor((d.getTime() - start.getTime()) / 86400000)
 }
+
+/** YYYY-MM-DD -> 10月23日 星期四 */
+export function formatKeyCN(key) {
+  return formatDateCN(fromKey(key))
+}

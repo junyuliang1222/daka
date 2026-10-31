@@ -71,7 +71,7 @@ function overallCalendar(active, map, year, month, today) {
 
 /* ---------------- 单事项月历 ---------------- */
 
-function monthCalendar(habit, map, year, month, today) {
+function monthCalendar(habit, map, year, month, today, actions) {
   const grid = el('div', { class: 'cal' })
 
   const head = el('div', { class: 'cal-head' })
@@ -100,12 +100,24 @@ function monthCalendar(habit, map, year, month, today) {
     else if (future) classes.push('future')
     else classes.push('missed')
     if (isToday) classes.push('today')
+    if (!future) classes.push('editable')
 
     let style
     if (done) style = { background: habit.color, color: '#fff' }
     else if (amount > 0) style = { background: hexAlpha(habit.color, 0.22), color: habit.color }
 
-    body.appendChild(el('div', { class: classes.join(' '), style, title: key }, String(d)))
+    body.appendChild(
+      el(
+        'div',
+        {
+          class: classes.join(' '),
+          style,
+          title: future ? key : `${key}　点一下补打卡`,
+          onclick: future ? undefined : () => actions.openDay(habit, key),
+        },
+        String(d),
+      ),
+    )
   }
 
   grid.appendChild(body)
@@ -310,7 +322,14 @@ export function statsView(ctx) {
   )
 
   /* ---- 各项表现 ---- */
-  page.appendChild(el('div', { class: 'section-title' }, '各项表现'))
+  page.appendChild(
+    el(
+      'div',
+      { class: 'section-title' },
+      '各项表现',
+      el('span', { class: 'hint-right' }, '点日期可补打卡'),
+    ),
+  )
 
   for (const h of active) {
     const cum = cumulativeOf(h, map)
@@ -344,7 +363,7 @@ export function statsView(ctx) {
           icon('chevron', 16),
         ),
       ),
-      monthCalendar(h, map, y, m, today),
+      monthCalendar(h, map, y, m, today, actions),
       el(
         'div',
         { class: 'hc-foot' },
